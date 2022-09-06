@@ -21,11 +21,12 @@ import java.util.Map;
 public class FilmController {
 
     final Map<Integer, Film> films = new HashMap<>();
+    private int id = 1;
 
     @PostMapping
     Film createFilm(@Valid @RequestBody Film film) {
         log.info("Create: {}", film);
-        film.setId(Generator.getId());
+        film.setId(generateId());
         films.put(film.getId(), film);
         return film;
     }
@@ -45,6 +46,10 @@ public class FilmController {
     @GetMapping
     Collection<Film> getFilms() {
         return films.values();
+    }
+
+    private int generateId() {
+        return id++;
     }
 
 }

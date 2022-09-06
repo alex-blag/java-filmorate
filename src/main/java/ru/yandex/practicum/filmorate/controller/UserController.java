@@ -21,11 +21,12 @@ import java.util.Map;
 public class UserController {
 
     final Map<Integer, User> users = new HashMap<>();
+    private int id = 1;
 
     @PostMapping
     User createUser(@Valid @RequestBody User user) {
         log.info("Create: {}", user);
-        user.setId(Generator.getId());
+        user.setId(generateId());
         if (user.getName() == null) {
             user.setName(user.getLogin());
         }
@@ -49,6 +50,10 @@ public class UserController {
     @GetMapping
     Collection<User> getUsers() {
         return users.values();
+    }
+
+    private int generateId() {
+        return id++;
     }
 
 }
