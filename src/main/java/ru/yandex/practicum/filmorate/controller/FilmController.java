@@ -20,13 +20,14 @@ import java.util.Map;
 @RequestMapping(path = "/films")
 public class FilmController {
 
-    final Map<Integer, Film> films = new HashMap<>();
+    private final Map<Integer, Film> films = new HashMap<>();
     private int id = 1;
 
     @PostMapping
     Film createFilm(@Valid @RequestBody Film film) {
-        log.info("Create: {}", film);
         film.setId(generateId());
+
+        log.info("Create: {}", film);
         films.put(film.getId(), film);
         return film;
     }

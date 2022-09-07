@@ -20,17 +20,15 @@ import java.util.Map;
 @RequestMapping(path = "/users")
 public class UserController {
 
-    final Map<Integer, User> users = new HashMap<>();
+    private final Map<Integer, User> users = new HashMap<>();
     private int id = 1;
 
     @PostMapping
     User createUser(@Valid @RequestBody User user) {
-        log.info("Create: {}", user);
         user.setId(generateId());
-        if (user.getName() == null) {
-            user.setName(user.getLogin());
-        }
+        fillNameIfEmpty(user);
 
+        log.info("Create: {}", user);
         users.put(user.getId(), user);
         return user;
     }
@@ -41,6 +39,8 @@ public class UserController {
         if (!users.containsKey(userId)) {
             throw new NoSuchUserIdException();
         }
+
+        fillNameIfEmpty(user);
 
         log.info("Update: {}", user);
         users.put(userId, user);
@@ -54,6 +54,13 @@ public class UserController {
 
     private int generateId() {
         return id++;
+    }
+
+    private void fillNameIfEmpty(User user) {
+        String userName = user.getName();
+        if (userName == null || userName.isBlank()) {
+            user.setName(user.getLogin());
+        }
     }
 
 }

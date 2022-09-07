@@ -3,7 +3,7 @@ package ru.yandex.practicum.filmorate.model;
 import lombok.Data;
 import ru.yandex.practicum.filmorate.annotation.IsAfter;
 
-import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.Size;
 import java.time.LocalDate;
@@ -13,7 +13,7 @@ public class Film {
 
     private int id;
 
-    @NotEmpty
+    @NotBlank
     private String name;
 
     @Size(max = 200)
