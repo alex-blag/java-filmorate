@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -25,7 +26,6 @@ public class InMemoryUserStorage implements UserStorage {
     @Override
     public User createUser(User user) {
         user.setId(generateId());
-        fillNameIfEmpty(user);
 
         log.info("Create: {}", user);
         userStorage.put(user.getId(), user);
@@ -34,13 +34,10 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public User updateUser(User user) {
-        int userId = user.getId();
-        validate(userId);
-
-        fillNameIfEmpty(user);
+        validate(user.getId());
 
         log.info("Update: {}", user);
-        userStorage.put(userId, user);
+        userStorage.put(user.getId(), user);
         return user;
     }
 
@@ -50,27 +47,17 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public User getUser(int userId) {
-        this.validate(userId);
-        return userStorage.get(userId);
-    }
-
-    @Override
-    public void validate(int userId) {
-        if (!userStorage.containsKey(userId)) {
-            throw new NoSuchUserIdException();
-        }
+    public Optional<User> getUser(int userId) {
+        return Optional.ofNullable(userStorage.get(userId));
     }
 
     private int generateId() {
         return id++;
     }
 
-    private void fillNameIfEmpty(User user) {
-        String userName = user.getName();
-        if (userName == null || userName.isBlank()) {
-            user.setName(user.getLogin());
-        }
+    private void validate(int userId) {
+        getUser(userId)
+                .orElseThrow(() -> new NoSuchUserIdException(userId));
     }
 
 }

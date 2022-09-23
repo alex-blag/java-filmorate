@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -28,17 +29,15 @@ public class InMemoryFilmStorage implements FilmStorage {
 
         log.info("Create: {}", film);
         filmStorage.put(film.getId(), film);
-
         return film;
     }
 
     @Override
     public Film updateFilm(Film film) {
-        int filmId = film.getId();
-        validate(filmId);
+        validate(film.getId());
 
         log.info("Update: {}", film);
-        filmStorage.put(filmId, film);
+        filmStorage.put(film.getId(), film);
         return film;
     }
 
@@ -48,20 +47,17 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public Film getFilm(int filmId) {
-        this.validate(filmId);
-        return filmStorage.get(filmId);
-    }
-
-    @Override
-    public void validate(int filmId) {
-        if (!filmStorage.containsKey(filmId)) {
-            throw new NoSuchFilmIdException();
-        }
+    public Optional<Film> getFilm(int filmId) {
+        return Optional.ofNullable(filmStorage.get(filmId));
     }
 
     private int generateId() {
         return id++;
+    }
+
+    private void validate(int filmId) {
+        getFilm(filmId)
+                .orElseThrow(() -> new NoSuchFilmIdException(filmId));
     }
 
 }

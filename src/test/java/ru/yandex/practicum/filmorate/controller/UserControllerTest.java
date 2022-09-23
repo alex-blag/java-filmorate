@@ -20,7 +20,7 @@ class UserControllerTest {
     void setUp() {
         UserStorage userStorage = new InMemoryUserStorage();
         UserService userService = new UserService(userStorage);
-        controller = new UserController(userStorage, userService);
+        controller = new UserController(userService);
 
         user = new User();
         user.setId(1);
