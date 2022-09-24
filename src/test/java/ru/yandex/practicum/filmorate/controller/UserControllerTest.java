@@ -2,21 +2,24 @@ package ru.yandex.practicum.filmorate.controller;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@SpringBootTest
 class UserControllerTest {
 
-    private UserController controller;
+    @Autowired
+    private UserController userController;
+
     private User user;
 
     @BeforeEach
     void setUp() {
-        controller = new UserController();
-
         user = new User();
         user.setId(1);
         user.setEmail("user@mail");
@@ -27,17 +30,18 @@ class UserControllerTest {
 
     @Test
     void givenUserWithEmptyName_whenCreateUser_expectNameAsLogin() {
-        User created = controller.createUser(user);
+        User created = userController.createUser(user);
 
         assertEquals(created.getName(), created.getLogin());
     }
 
     @Test
     void givenUserWithEmptyName_whenUpdateUser_expectNameAsLogin() {
-        User created = controller.createUser(user);
+        User created = userController.createUser(user);
         created.setName("");
-        User updated = controller.updateUser(created);
+        User updated = userController.updateUser(created);
 
         assertEquals(updated.getName(), updated.getLogin());
     }
+
 }
