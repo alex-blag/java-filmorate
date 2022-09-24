@@ -24,6 +24,7 @@ public class FilmService {
     }
 
     public Film updateFilm(Film film) {
+        validateFilmId(film.getId());
         return filmStorage.updateFilm(film);
     }
 
@@ -38,12 +39,12 @@ public class FilmService {
     }
 
     public void addLike(int filmId, int userId) {
-        validate(userId);
+        validateUserId(userId);
         getFilm(filmId).addLike(userId);
     }
 
     public void removeLike(int filmId, int userId) {
-        validate(userId);
+        validateUserId(userId);
         getFilm(filmId).removeLike(userId);
     }
 
@@ -57,10 +58,14 @@ public class FilmService {
                         .toList());
     }
 
-    private void validate(int userId) {
+    private void validateUserId(int userId) {
         userStorage
                 .getUser(userId)
                 .orElseThrow(() -> new NoSuchUserIdException(userId));
+    }
+
+    private void validateFilmId(int filmId) {
+        getFilm(filmId);
     }
 
 }

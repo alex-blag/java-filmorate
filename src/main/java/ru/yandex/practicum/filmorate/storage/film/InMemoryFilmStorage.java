@@ -2,7 +2,6 @@ package ru.yandex.practicum.filmorate.storage.film;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.exception.NoSuchFilmIdException;
 import ru.yandex.practicum.filmorate.model.Film;
 
 import java.util.ArrayList;
@@ -34,8 +33,6 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     @Override
     public Film updateFilm(Film film) {
-        validate(film.getId());
-
         log.info("Update: {}", film);
         filmStorage.put(film.getId(), film);
         return film;
@@ -53,11 +50,6 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     private int generateId() {
         return id++;
-    }
-
-    private void validate(int filmId) {
-        getFilm(filmId)
-                .orElseThrow(() -> new NoSuchFilmIdException(filmId));
     }
 
 }

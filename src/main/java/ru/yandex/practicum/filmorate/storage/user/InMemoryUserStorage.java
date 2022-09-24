@@ -2,7 +2,6 @@ package ru.yandex.practicum.filmorate.storage.user;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import ru.yandex.practicum.filmorate.exception.NoSuchUserIdException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.util.ArrayList;
@@ -34,8 +33,6 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public User updateUser(User user) {
-        validate(user.getId());
-
         log.info("Update: {}", user);
         userStorage.put(user.getId(), user);
         return user;
@@ -53,11 +50,6 @@ public class InMemoryUserStorage implements UserStorage {
 
     private int generateId() {
         return id++;
-    }
-
-    private void validate(int userId) {
-        getUser(userId)
-                .orElseThrow(() -> new NoSuchUserIdException(userId));
     }
 
 }

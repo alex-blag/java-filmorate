@@ -21,6 +21,7 @@ public class UserService {
     }
 
     public User updateUser(User user) {
+        validateUserId(user.getId());
         return userStorage.updateUser(user);
     }
 
@@ -51,28 +52,26 @@ public class UserService {
     }
 
     public List<User> getFriends(int userId) {
-        Set<Integer> friendsIds = getUser(userId).getFriendsIds();
-
-        return getUsers(friendsIds);
+        return getUser(userId)
+                .getFriendsIds().stream()
+                .map(this::getUser)
+                .collect(Collectors
+                        .toList());
     }
 
     public List<User> getCommonFriends(int userId, int otherId) {
         Set<Integer> friendsIds = getUser(userId).getFriendsIds();
         Set<Integer> othersIds = getUser(otherId).getFriendsIds();
 
-        Set<Integer> commonsIds = friendsIds.stream()
+        return friendsIds.stream()
                 .filter(othersIds::contains)
-                .collect(Collectors
-                        .toSet());
-
-        return getUsers(commonsIds);
-    }
-
-    private List<User> getUsers(Set<Integer> userIds) {
-        return userIds.stream()
                 .map(this::getUser)
                 .collect(Collectors
                         .toList());
+    }
+
+    private void validateUserId(int userId) {
+        getUser(userId);
     }
 
 }
