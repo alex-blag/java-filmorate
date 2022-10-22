@@ -10,12 +10,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.test.annotation.DirtiesContext;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.storage.user.UserDbStorage;
+import ru.yandex.practicum.filmorate.model.Genre;
+import ru.yandex.practicum.filmorate.model.MpaRating;
 
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -28,13 +29,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class FilmDbStorageTest {
 
     private final FilmDbStorage filmDbStorage;
-    private final UserDbStorage userDbStorage;
 
     private Film fourRooms;
     private Film starWars;
-
-    private User john;
-    private User jane;
 
     @BeforeEach
     void setUp() {
@@ -43,32 +40,32 @@ class FilmDbStorageTest {
         fourRooms.setDescription("Four Rooms");
         fourRooms.setReleaseDate(LocalDate.of(1995, 12, 9));
         fourRooms.setDuration(98);
+        MpaRating mpaRating = new MpaRating();
+        mpaRating.setId(4);
+        fourRooms.setMpaRating(mpaRating);
+        Genre genre = new Genre();
+        genre.setId(1);
+        fourRooms.setGenres(Set.of(genre));
         fourRooms.setUserIdsLikes(new HashSet<>());
+        fourRooms.setRank(10);
 
         starWars = new Film();
         starWars.setName("Star Wars");
         starWars.setDescription("Star Wars");
         starWars.setReleaseDate(LocalDate.of(1977, 5, 25));
         starWars.setDuration(121);
+        mpaRating = new MpaRating();
+        mpaRating.setId(2);
+        starWars.setMpaRating(mpaRating);
+        genre = new Genre();
+        genre.setId(6);
+        starWars.setGenres(Set.of(genre));
         starWars.setUserIdsLikes(new HashSet<>());
-
-        john = new User();
-        john.setLogin("john.doe");
-        john.setName("John Doe");
-        john.setEmail("john.doe@mail.com");
-        john.setBirthday(LocalDate.of(1981, 1, 1));
-        john.setFriendships(new HashSet<>());
-
-        jane = new User();
-        jane.setLogin("jane.roe");
-        jane.setName("Jane Roe");
-        jane.setEmail("jane.roe@mail.com");
-        jane.setBirthday(LocalDate.of(1982, 12, 31));
-        jane.setFriendships(new HashSet<>());
+        starWars.setRank(1);
     }
 
     @Test
-    void givenFilm_whenCreateFilm_expectActualFilmId() {
+    void givenFilm_whenCreateFilm_expectActualFilm() {
         var created = filmDbStorage.createFilm(fourRooms);
         assertEquals(1, created.getId());
     }
@@ -97,8 +94,12 @@ class FilmDbStorageTest {
     @Test
     void givenFilms_whenGetFilms_expectActualFilms() {
         var created1 = filmDbStorage.createFilm(fourRooms);
+        var gotten1 = filmDbStorage.getFilm(created1.getId()).orElseThrow();
+
         var created2 = filmDbStorage.createFilm(starWars);
-        var created = List.of(created1, created2);
+        var gotten2 = filmDbStorage.getFilm(created2.getId()).orElseThrow();
+
+        var created = List.of(gotten1, gotten2);
 
         var gotten = filmDbStorage.getFilms();
         assertEquals(created, gotten);
@@ -107,9 +108,8 @@ class FilmDbStorageTest {
     @Test
     void givenFilmWithLikes_whenGetFilm_expectActualFilm() {
         var created = filmDbStorage.createFilm(fourRooms);
-
         var gotten = filmDbStorage.getFilm(created.getId()).orElseThrow();
-        assertEquals(created, gotten);
+        assertEquals(1, gotten.getId());
     }
 
 }
