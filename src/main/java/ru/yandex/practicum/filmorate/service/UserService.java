@@ -1,8 +1,10 @@
 package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NoSuchUserIdException;
+import ru.yandex.practicum.filmorate.model.Friendship;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
@@ -14,6 +16,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserService {
 
+    @Qualifier("userDbStorage")
     private final UserStorage userStorage;
 
     public User createUser(User user) {
@@ -39,33 +42,35 @@ public class UserService {
         User user = getUser(userId);
         User friend = getUser(friendId);
 
-        user.addFriend(friendId);
-        friend.addFriend(userId);
+        Friendship f = new Friendship(friendId, true);
+        user.getFriendships().add(f);
+        updateUser(user);
     }
 
     public void removeFriend(int userId, int friendId) {
         User user = getUser(userId);
         User friend = getUser(friendId);
 
-        user.removeFriend(friendId);
-        friend.removeFriend(userId);
+        Friendship f = new Friendship(friendId, true);
+        user.getFriendships().remove(f);
+        updateUser(user);
     }
 
     public List<User> getFriends(int userId) {
         return getUser(userId)
-                .getFriendsIds().stream()
-                .map(this::getUser)
+                .getFriendships().stream()
+                .map(f -> getUser(f.getFriendId()))
                 .collect(Collectors
                         .toList());
     }
 
     public List<User> getCommonFriends(int userId, int otherId) {
-        Set<Integer> friendsIds = getUser(userId).getFriendsIds();
-        Set<Integer> othersIds = getUser(otherId).getFriendsIds();
+        Set<Friendship> friendships = getUser(userId).getFriendships();
+        Set<Friendship> others = getUser(otherId).getFriendships();
 
-        return friendsIds.stream()
-                .filter(othersIds::contains)
-                .map(this::getUser)
+        return friendships.stream()
+                .filter(others::contains)
+                .map(f -> getUser(f.getFriendId()))
                 .collect(Collectors
                         .toList());
     }

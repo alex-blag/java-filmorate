@@ -1,7 +1,9 @@
 package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.exception.NoLikeFromUserIdException;
 import ru.yandex.practicum.filmorate.exception.NoSuchFilmIdException;
 import ru.yandex.practicum.filmorate.exception.NoSuchUserIdException;
 import ru.yandex.practicum.filmorate.model.Film;
@@ -16,16 +18,20 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FilmService {
 
+    @Qualifier("filmDbStorage")
     private final FilmStorage filmStorage;
+
+    @Qualifier("userDbStorage")
     private final UserStorage userStorage;
 
     public Film createFilm(Film film) {
-        return filmStorage.createFilm(film);
+        filmStorage.createFilm(film);
+        return getFilm(film.getId());
     }
 
     public Film updateFilm(Film film) {
-        validateFilmId(film.getId());
-        return filmStorage.updateFilm(film);
+        filmStorage.updateFilm(film);
+        return getFilm(film.getId());
     }
 
     public List<Film> getFilms() {
@@ -39,33 +45,35 @@ public class FilmService {
     }
 
     public void addLike(int filmId, int userId) {
-        validateUserId(userId);
-        getFilm(filmId).addLike(userId);
+        var film = getFilm(filmId);
+        var user = userStorage
+                .getUser(userId)
+                .orElseThrow(() -> new NoSuchUserIdException(userId));
+
+        film.getUserIdsLikes().add(userId);
+        updateFilm(film);
     }
 
     public void removeLike(int filmId, int userId) {
-        validateUserId(userId);
-        getFilm(filmId).removeLike(userId);
+        var film = getFilm(filmId);
+
+        var userIdsLikes = film.getUserIdsLikes();
+        if (userIdsLikes.contains(userId)) {
+            film.getUserIdsLikes().remove(userId);
+            updateFilm(film);
+        } else {
+            throw new NoLikeFromUserIdException(userId);
+        }
     }
 
     public List<Film> getPopularFilms(int numberOfFilms) {
-        Comparator<Film> numberOfLikesComparator = Comparator.comparingInt(f -> f.getUserIdsThatLiked().size());
+        Comparator<Film> numberOfLikesComparator = Comparator.comparingInt(f -> f.getUserIdsLikes().size());
 
         return getFilms().stream()
                 .sorted(numberOfLikesComparator.reversed())
                 .limit(numberOfFilms)
                 .collect(Collectors
                         .toList());
-    }
-
-    private void validateUserId(int userId) {
-        userStorage
-                .getUser(userId)
-                .orElseThrow(() -> new NoSuchUserIdException(userId));
-    }
-
-    private void validateFilmId(int filmId) {
-        getFilm(filmId);
     }
 
 }

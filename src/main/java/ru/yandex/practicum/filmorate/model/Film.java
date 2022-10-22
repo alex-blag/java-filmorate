@@ -1,8 +1,7 @@
 package ru.yandex.practicum.filmorate.model;
 
-import lombok.AccessLevel;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
-import lombok.Setter;
 import ru.yandex.practicum.filmorate.annotation.IsAfter;
 
 import javax.validation.constraints.NotBlank;
@@ -16,7 +15,7 @@ import java.util.Set;
 @Data
 public class Film {
 
-    private int id;
+    private int id = -1;
 
     @NotBlank
     private String name;
@@ -31,15 +30,16 @@ public class Film {
     private int duration;
 
     @NotNull
-    @Setter(AccessLevel.NONE)
-    private Set<Integer> userIdsThatLiked = new HashSet<>();
+    @JsonProperty("mpa")
+    private MpaRating mpaRating;
 
-    public boolean addLike(int userId) {
-        return userIdsThatLiked.add(userId);
-    }
+    @NotNull
+    private Set<Genre> genres = new HashSet<>();
 
-    public boolean removeLike(int userId) {
-        return userIdsThatLiked.remove(userId);
-    }
+    @NotNull
+    private Set<Integer> userIdsLikes = new HashSet<>();
+
+    @JsonProperty("rate")
+    private int rank;
 
 }
