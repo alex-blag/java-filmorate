@@ -6,9 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import ru.yandex.practicum.filmorate.exception.ExceptionMessage;
-import ru.yandex.practicum.filmorate.exception.NoSuchFilmIdException;
-import ru.yandex.practicum.filmorate.exception.NoSuchUserIdException;
+import ru.yandex.practicum.filmorate.exception.*;
 
 import javax.validation.ConstraintViolationException;
 
@@ -19,7 +17,7 @@ public class ControllerExceptionHandler {
     @ExceptionHandler
     public ResponseEntity<String> handle(NoSuchUserIdException e) {
         return getExceptionResponse(
-                getNoSuchUserIdExceptionMessage(e.getUserId()),
+                formatExceptionMessage(ExceptionMessage.NO_SUCH_USER_ID, e.getUserId()),
                 HttpStatus.NOT_FOUND
         );
     }
@@ -27,7 +25,7 @@ public class ControllerExceptionHandler {
     @ExceptionHandler
     public ResponseEntity<String> handle(NoSuchFilmIdException e) {
         return getExceptionResponse(
-                getNoSuchFilmIdExceptionMessage(e.getFilmId()),
+                formatExceptionMessage(ExceptionMessage.NO_SUCH_FILM_ID, e.getFilmId()),
                 HttpStatus.NOT_FOUND
         );
     }
@@ -49,6 +47,71 @@ public class ControllerExceptionHandler {
     }
 
     @ExceptionHandler
+    public ResponseEntity<String> handle(FailedToInsertFilmException e) {
+        return getExceptionResponse(
+                e.getFilm().toString(),
+                HttpStatus.INTERNAL_SERVER_ERROR
+        );
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<String> handle(FailedToUpdateFilmException e) {
+        return getExceptionResponse(
+                e.getFilm().toString(),
+                HttpStatus.NOT_FOUND
+        );
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<String> handle(FailedToInsertUserException e) {
+        return getExceptionResponse(
+                e.getUser().toString(),
+                HttpStatus.INTERNAL_SERVER_ERROR
+        );
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<String> handle(FailedToUpdateUserException e) {
+        return getExceptionResponse(
+                e.getUser().toString(),
+                HttpStatus.NOT_FOUND
+        );
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<String> handle(NoLikeFromUserIdException e) {
+        return getExceptionResponse(
+                formatExceptionMessage(ExceptionMessage.NO_LIKE_FROM_USER_ID, e.getUserId()),
+                HttpStatus.NOT_FOUND
+        );
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<String> handle(NoSuchLikeToDeleteException e) {
+        return getExceptionResponse(
+                formatExceptionMessage(ExceptionMessage.NO_SUCH_LIKE_TO_DELETE, e.getUserId()),
+                HttpStatus.NOT_FOUND
+        );
+    }
+
+
+    @ExceptionHandler
+    public ResponseEntity<String> handle(NoSuchMpaRatingIdException e) {
+        return getExceptionResponse(
+                formatExceptionMessage(ExceptionMessage.NO_SUCH_MPA_RATING_ID, e.getMpaRatingId()),
+                HttpStatus.NOT_FOUND
+        );
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<String> handle(NoSuchGenreIdException e) {
+        return getExceptionResponse(
+                formatExceptionMessage(ExceptionMessage.NO_SUCH_GENRE_ID, e.getGenreId()),
+                HttpStatus.NOT_FOUND
+        );
+    }
+
+    @ExceptionHandler
     public ResponseEntity<String> handle(Throwable e) {
         return getExceptionResponse(
                 e.getMessage(),
@@ -61,15 +124,7 @@ public class ControllerExceptionHandler {
         return new ResponseEntity<>(message, status);
     }
 
-    private String getNoSuchFilmIdExceptionMessage(int filmId) {
-        return getExceptionMessage(ExceptionMessage.NO_SUCH_FILM_ID, filmId);
-    }
-
-    private String getNoSuchUserIdExceptionMessage(int userId) {
-        return getExceptionMessage(ExceptionMessage.NO_SUCH_USER_ID, userId);
-    }
-
-    private String getExceptionMessage(ExceptionMessage exceptionMessage, int id) {
+    private String formatExceptionMessage(ExceptionMessage exceptionMessage, int id) {
         return String.format(
                 "%s [%d]",
                 exceptionMessage.getMessage(),
