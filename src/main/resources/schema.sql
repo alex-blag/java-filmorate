@@ -51,13 +51,6 @@ CREATE TABLE mpa_rating (
 	CONSTRAINT uc_mpa_rating_mpa_rating UNIQUE (mpa_rating)
 );
 
---CREATE TABLE film_rank (
---	film_id         INTEGER,
---    number_of_likes INTEGER,
---    rank            INTEGER,
---    CONSTRAINT pk_film_rank PRIMARY KEY (film_id)
---);
-
 CREATE TABLE film_genre (
     film_id		INTEGER NOT NULL,
     genre_id	INTEGER NOT NULL,
@@ -72,9 +65,9 @@ CREATE TABLE genre (
 );
 
 CREATE TABLE _like (
-    user_id INTEGER NOT NULL,
     film_id	INTEGER NOT NULL,
-    CONSTRAINT pk_like PRIMARY KEY (user_id, film_id)
+    user_id INTEGER NOT NULL,
+    CONSTRAINT pk_like PRIMARY KEY (film_id, user_id)
 );
 
 ALTER TABLE friendship
@@ -89,10 +82,6 @@ ALTER TABLE film
 ADD CONSTRAINT fk_film_mpa_rating
 FOREIGN KEY(mpa_rating_id) REFERENCES mpa_rating (mpa_rating_id);
 
---ALTER TABLE film_rank
---ADD CONSTRAINT fk_film_rank_film
---FOREIGN KEY(film_id) REFERENCES film (film_id);
-
 ALTER TABLE film_genre
 ADD CONSTRAINT fk_film_genre_film_id
 FOREIGN KEY(film_id) REFERENCES film (film_id);
@@ -102,11 +91,11 @@ ADD CONSTRAINT fk_film_genre_genre_id
 FOREIGN KEY(genre_id) REFERENCES genre (genre_id);
 
 ALTER TABLE _like
-ADD CONSTRAINT fk_like_user_id
-FOREIGN KEY(user_id) REFERENCES _user (user_id);
-
-ALTER TABLE _like
 ADD CONSTRAINT fk_like_film_id
 FOREIGN KEY(film_id) REFERENCES film (film_id);
+
+ALTER TABLE _like
+ADD CONSTRAINT fk_like_user_id
+FOREIGN KEY(user_id) REFERENCES _user (user_id);
 
 COMMIT;

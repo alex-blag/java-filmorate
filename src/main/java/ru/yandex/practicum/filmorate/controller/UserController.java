@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping(path = "/users")
 @RequiredArgsConstructor
+@Validated
 public class UserController {
 
     private final UserService userService;
@@ -25,13 +27,13 @@ public class UserController {
     @PostMapping
     public User createUser(@Valid @RequestBody User user) {
         fillUserNameIfEmpty(user);
-        return userService.createUser(user);
+        return userService.postUser(user);
     }
 
     @PutMapping
     public User updateUser(@Valid @RequestBody User user) {
         fillUserNameIfEmpty(user);
-        return userService.updateUser(user);
+        return userService.putUser(user);
     }
 
     @GetMapping
@@ -45,19 +47,19 @@ public class UserController {
     }
 
     @PutMapping("/{userId}/friends/{friendId}")
-    public void addFriend(
+    public void putFriend(
             @PathVariable int userId,
             @PathVariable int friendId
     ) {
-        userService.addFriend(userId, friendId);
+        userService.putFriend(userId, friendId);
     }
 
     @DeleteMapping("/{userId}/friends/{friendId}")
-    public void removeFriend(
+    public void deleteFriend(
             @PathVariable int userId,
             @PathVariable int friendId
     ) {
-        userService.removeFriend(userId, friendId);
+        userService.deleteFriend(userId, friendId);
     }
 
     @GetMapping("/{userId}/friends")

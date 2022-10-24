@@ -17,7 +17,7 @@ public class ControllerExceptionHandler {
     @ExceptionHandler
     public ResponseEntity<String> handle(NoSuchUserIdException e) {
         return getExceptionResponse(
-                getNoSuchUserIdExceptionMessage(e.getUserId()),
+                formatExceptionMessage(ExceptionMessage.NO_SUCH_USER_ID, e.getUserId()),
                 HttpStatus.NOT_FOUND
         );
     }
@@ -79,20 +79,21 @@ public class ControllerExceptionHandler {
     }
 
     @ExceptionHandler
-    public ResponseEntity<String> handle(FailedToAddFriendException e) {
+    public ResponseEntity<String> handle(NoLikeFromUserIdException e) {
         return getExceptionResponse(
-                getFailedToAddFriendExceptionMessage(e.getFriendId()),
-                HttpStatus.INTERNAL_SERVER_ERROR
+                formatExceptionMessage(ExceptionMessage.NO_LIKE_FROM_USER_ID, e.getUserId()),
+                HttpStatus.NOT_FOUND
         );
     }
 
     @ExceptionHandler
-    public ResponseEntity<String> handle(NoLikeFromUserIdException e) {
+    public ResponseEntity<String> handle(NoSuchLikeToDeleteException e) {
         return getExceptionResponse(
-                getNoLikeFromUserIdExceptionMessage(e.getUserId()),
+                formatExceptionMessage(ExceptionMessage.NO_SUCH_LIKE_TO_DELETE, e.getUserId()),
                 HttpStatus.NOT_FOUND
         );
     }
+
 
     @ExceptionHandler
     public ResponseEntity<String> handle(NoSuchMpaRatingIdException e) {
@@ -121,18 +122,6 @@ public class ControllerExceptionHandler {
     private ResponseEntity<String> getExceptionResponse(String message, HttpStatus status) {
         log.error(message);
         return new ResponseEntity<>(message, status);
-    }
-
-    private String getNoSuchUserIdExceptionMessage(int userId) {
-        return formatExceptionMessage(ExceptionMessage.NO_SUCH_USER_ID, userId);
-    }
-
-    private String getFailedToAddFriendExceptionMessage(int friendId) {
-        return formatExceptionMessage(ExceptionMessage.FAILED_TO_ADD_FRIEND, friendId);
-    }
-
-    private String getNoLikeFromUserIdExceptionMessage(int userId) {
-        return formatExceptionMessage(ExceptionMessage.NO_LIKE_FROM_USER_ID, userId);
     }
 
     private String formatExceptionMessage(ExceptionMessage exceptionMessage, int id) {

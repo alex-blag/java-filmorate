@@ -11,8 +11,10 @@ public interface FilmStorage {
 
     Film updateFilm(Film film);
 
-    List<Film> getFilms();
+    Optional<Film> readFilm(int filmId);
 
-    Optional<Film> getFilm(int filmId);
+    List<Film> readFilms();
+
+    List<Film> readPopularFilms(int numberOfFilms);
 
 }

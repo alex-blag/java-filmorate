@@ -22,19 +22,17 @@ import java.util.Optional;
 @Slf4j
 public class MpaRatingDbStorage implements MpaRatingStorage {
 
-    private final NamedParameterJdbcTemplate namedJdbcTemplate;
+    private final NamedParameterJdbcTemplate jdbcTemplate;
 
     @Override
-    public List<MpaRating> getMpaRatings() {
-        log.info("Get MPA ratings: ");
-
+    public List<MpaRating> readMpaRatings() {
+        log.info("Read MPA ratings: ");
         return selectMpaRatings();
     }
 
     @Override
-    public Optional<MpaRating> getMpaRating(int mpaRatingId) {
-        log.info("Get MPA rating: {}", mpaRatingId);
-
+    public Optional<MpaRating> readMpaRating(int mpaRatingId) {
+        log.info("Read MPA rating: {}", mpaRatingId);
         return selectMpaRating(mpaRatingId);
     }
 
@@ -43,10 +41,10 @@ public class MpaRatingDbStorage implements MpaRatingStorage {
                 "FROM mpa_rating mr " +
                 "ORDER BY mr.mpa_rating_id";
 
-        return namedJdbcTemplate.query(sql, this::mapMpaRating);
+        return jdbcTemplate.query(sql, this::mapMpaRating);
     }
 
-    private Optional<MpaRating> selectMpaRating(int mpaRatingId) {
+    private Optional<MpaRating> selectMpaRating(int mpaRatingId) throws NoSuchMpaRatingIdException {
         String sql = String.format(
                 "SELECT mr.mpa_rating_id, " +
                         "mr.mpa_rating " +
@@ -58,7 +56,7 @@ public class MpaRatingDbStorage implements MpaRatingStorage {
                 .addValue(MpaRatingCol.MPA_RATING_ID, mpaRatingId);
 
         try {
-            var mpaRating = namedJdbcTemplate.queryForObject(sql, sqlParams, this::mapMpaRating);
+            var mpaRating = jdbcTemplate.queryForObject(sql, sqlParams, this::mapMpaRating);
             return Optional.ofNullable(mpaRating);
 
         } catch (EmptyResultDataAccessException e) {
@@ -67,10 +65,10 @@ public class MpaRatingDbStorage implements MpaRatingStorage {
     }
 
     private MpaRating mapMpaRating(ResultSet rs, int rowNum) throws SQLException {
-        MpaRating mpaRating = new MpaRating();
-        mpaRating.setId(rs.getInt(MpaRatingCol.MPA_RATING_ID));
-        mpaRating.setRating(rs.getString(MpaRatingCol.MPA_RATING));
-        return mpaRating;
+        MpaRating mr = new MpaRating();
+        mr.setId(rs.getInt(MpaRatingCol.MPA_RATING_ID));
+        mr.setName(rs.getString(MpaRatingCol.MPA_RATING));
+        return mr;
     }
 
 }

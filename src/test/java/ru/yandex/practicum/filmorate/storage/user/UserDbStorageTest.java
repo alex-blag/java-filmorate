@@ -12,7 +12,6 @@ import org.springframework.test.annotation.DirtiesContext;
 import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
-import java.util.HashSet;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -37,14 +36,12 @@ class UserDbStorageTest {
         john.setName("John");
         john.setEmail("john@mail.com");
         john.setBirthday(LocalDate.of(1981, 1, 1));
-        john.setFriendships(new HashSet<>());
 
         jane = new User();
         jane.setLogin("jane");
         jane.setName("Jane");
         jane.setEmail("jane@mail.com");
         jane.setBirthday(LocalDate.of(1982, 12, 31));
-        jane.setFriendships(new HashSet<>());
     }
 
     @Test
@@ -80,7 +77,7 @@ class UserDbStorageTest {
         var created2 = userDbStorage.createUser(jane);
         var created = List.of(created1, created2);
 
-        var gotten = userDbStorage.getUsers();
+        var gotten = userDbStorage.readUsers();
         assertEquals(created, gotten);
     }
 
@@ -88,7 +85,7 @@ class UserDbStorageTest {
     void givenUser_whenGetUser_expectActualUser() {
         var created = userDbStorage.createUser(john);
 
-        var gotten = userDbStorage.getUser(created.getId()).orElseThrow();
+        var gotten = userDbStorage.readUser(created.getId()).orElseThrow();
         assertEquals(created, gotten);
     }
 

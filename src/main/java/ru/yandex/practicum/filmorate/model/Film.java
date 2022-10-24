@@ -36,9 +36,6 @@ public class Film {
     @NotNull
     private Set<Genre> genres = new HashSet<>();
 
-    @NotNull
-    private Set<Integer> userIdsLikes = new HashSet<>();
-
     @JsonProperty("rate")
     private int rank;
 

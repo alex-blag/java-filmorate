@@ -7,7 +7,7 @@ import ru.yandex.practicum.filmorate.exception.NoSuchGenreIdException;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.genre.GenreDbStorage;
 
-import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -16,13 +16,13 @@ public class GenreService {
     @Qualifier("genreDbStorage")
     private final GenreDbStorage genreDbStorage;
 
-    public List<Genre> getGenres() {
-        return genreDbStorage.getGenres();
+    public Set<Genre> getGenres() {
+        return genreDbStorage.readGenres();
     }
 
     public Genre getGenre(int genreId) {
         return genreDbStorage
-                .getGenre(genreId)
+                .readGenre(genreId)
                 .orElseThrow(() -> new NoSuchGenreIdException(genreId));
     }
 

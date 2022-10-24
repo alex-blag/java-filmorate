@@ -3,16 +3,16 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.NoLikeFromUserIdException;
 import ru.yandex.practicum.filmorate.exception.NoSuchFilmIdException;
-import ru.yandex.practicum.filmorate.exception.NoSuchUserIdException;
+import ru.yandex.practicum.filmorate.exception.NoSuchMpaRatingIdException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.user.UserStorage;
+import ru.yandex.practicum.filmorate.storage.film_genre.FilmGenreStorage;
+import ru.yandex.practicum.filmorate.storage.like.LikeStorage;
+import ru.yandex.practicum.filmorate.storage.mpa_rating.MpaRatingStorage;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -21,59 +21,72 @@ public class FilmService {
     @Qualifier("filmDbStorage")
     private final FilmStorage filmStorage;
 
-    @Qualifier("userDbStorage")
-    private final UserStorage userStorage;
+    @Qualifier("mpaRatingDbStorage")
+    private final MpaRatingStorage mpaRatingStorage;
 
-    public Film createFilm(Film film) {
+    @Qualifier("filmGenreDbStorage")
+    private final FilmGenreStorage filmGenreStorage;
+
+    @Qualifier("likeDbStorage")
+    private final LikeStorage likeStorage;
+
+    public Film postFilm(Film film) {
         filmStorage.createFilm(film);
+        filmGenreStorage.createFilmGenres(film.getId(), film.getGenres());
         return getFilm(film.getId());
     }
 
-    public Film updateFilm(Film film) {
+    public Film putFilm(Film film) {
         filmStorage.updateFilm(film);
+        filmGenreStorage.updateFilmGenres(film.getId(), film.getGenres());
         return getFilm(film.getId());
-    }
-
-    public List<Film> getFilms() {
-        return filmStorage.getFilms();
     }
 
     public Film getFilm(int filmId) {
-        return filmStorage
-                .getFilm(filmId)
+        var film = filmStorage
+                .readFilm(filmId)
                 .orElseThrow(() -> new NoSuchFilmIdException(filmId));
+
+        setMpaRating(film);
+        setGenres(film);
+        return film;
     }
 
-    public void addLike(int filmId, int userId) {
-        var film = getFilm(filmId);
-        var user = userStorage
-                .getUser(userId)
-                .orElseThrow(() -> new NoSuchUserIdException(userId));
-
-        film.getUserIdsLikes().add(userId);
-        updateFilm(film);
-    }
-
-    public void removeLike(int filmId, int userId) {
-        var film = getFilm(filmId);
-
-        var userIdsLikes = film.getUserIdsLikes();
-        if (userIdsLikes.contains(userId)) {
-            film.getUserIdsLikes().remove(userId);
-            updateFilm(film);
-        } else {
-            throw new NoLikeFromUserIdException(userId);
-        }
+    public List<Film> getFilms() {
+        var films = filmStorage.readFilms();
+        films.forEach(this::setMpaRating);
+        films.forEach(this::setGenres);
+        return films;
     }
 
     public List<Film> getPopularFilms(int numberOfFilms) {
-        Comparator<Film> numberOfLikesComparator = Comparator.comparingInt(f -> f.getUserIdsLikes().size());
+        return filmStorage.readPopularFilms(numberOfFilms);
+    }
 
-        return getFilms().stream()
-                .sorted(numberOfLikesComparator.reversed())
-                .limit(numberOfFilms)
-                .collect(Collectors
-                        .toList());
+    public void putLike(int filmId, int userId) {
+        likeStorage.createLike(filmId, userId);
+    }
+
+    public void deleteLike(int filmId, int userId) {
+        likeStorage.destroyLike(filmId, userId);
+    }
+
+    private void setMpaRating(Film film) {
+        var mpaRatingId = film.getMpaRating().getId();
+        var mpaRating = getMpaRating(mpaRatingId);
+        film.setMpaRating(mpaRating);
+    }
+
+    private MpaRating getMpaRating(int mpaRatingId) {
+        return mpaRatingStorage
+                .readMpaRating(mpaRatingId)
+                .orElseThrow(() -> new NoSuchMpaRatingIdException(mpaRatingId));
+    }
+
+    private void setGenres(Film film) {
+        var filmId = film.getId();
+        var filmGenres = filmGenreStorage.readFilmGenres(filmId);
+        film.setGenres(filmGenres);
     }
 
 }

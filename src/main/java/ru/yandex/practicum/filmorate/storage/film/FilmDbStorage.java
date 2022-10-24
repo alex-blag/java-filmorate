@@ -5,26 +5,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.FailedToInsertFilmException;
 import ru.yandex.practicum.filmorate.exception.FailedToUpdateFilmException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.storage.FilmCol;
-import ru.yandex.practicum.filmorate.storage.FilmGenreCol;
-import ru.yandex.practicum.filmorate.storage.GenreCol;
-import ru.yandex.practicum.filmorate.storage.LikeCol;
-import ru.yandex.practicum.filmorate.storage.MpaRatingCol;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 @Component
 @Qualifier("filmDbStorage")
@@ -32,56 +24,41 @@ import java.util.Set;
 @Slf4j
 public class FilmDbStorage implements FilmStorage {
 
-    private final NamedParameterJdbcTemplate namedJdbcTemplate;
+    private static final String LIMIT = "limit";
+
+    private final NamedParameterJdbcTemplate jdbcTemplate;
 
     @Override
     public Film createFilm(Film film) {
         log.info("Create film: {}", film);
-
         insertFilm(film);
-        insertGenres(film.getId(), film.getGenres());
-        insertLikes(film.getId(), film.getUserIdsLikes());
         return film;
     }
 
     @Override
     public Film updateFilm(Film film) {
         log.info("Update film: {}", film);
-
-        _updateFilm(film);
-        updateGenres(film);
-        updateLikes(film);
+        updateSetFilm(film);
         return film;
     }
 
     @Override
-    public List<Film> getFilms() {
-        log.info("Get films: ");
-
-        var films = selectFilms();
-        for (Film film : films) {
-            var likes = selectLikes(film.getId());
-            film.setUserIdsLikes(likes);
-            var genres = selectGenres(film.getId());
-            film.setGenres(genres);
-        }
-        return films;
+    public Optional<Film> readFilm(int filmId) {
+        log.info("Read film: {}", filmId);
+        var film = selectFilm(filmId);
+        return Optional.ofNullable(film);
     }
 
     @Override
-    public Optional<Film> getFilm(int filmId) {
-        log.info("Get film by id: {}", filmId);
+    public List<Film> readFilms() {
+        log.info("Read films: ");
+        return selectFilms();
+    }
 
-        var film = selectFilm(filmId);
-        if (film == null) {
-            return Optional.empty();
-        } else {
-            var likes = selectLikes(filmId);
-            film.setUserIdsLikes(likes);
-            var genres = selectGenres(film.getId());
-            film.setGenres(genres);
-            return Optional.of(film);
-        }
+    @Override
+    public List<Film> readPopularFilms(int numberOfFilms) {
+        log.info("Read {} popular films: ", numberOfFilms);
+        return selectPopularFilms(numberOfFilms);
     }
 
     private void insertFilm(Film film) throws FailedToInsertFilmException {
@@ -105,7 +82,7 @@ public class FilmDbStorage implements FilmStorage {
 
         var keyHolder = new GeneratedKeyHolder();
 
-        int rowsAffected = namedJdbcTemplate.update(sql, sqlParams, keyHolder);
+        int rowsAffected = jdbcTemplate.update(sql, sqlParams, keyHolder);
         if (rowsAffected == 0 || keyHolder.getKey() == null) {
             throw new FailedToInsertFilmException(film);
         }
@@ -113,7 +90,7 @@ public class FilmDbStorage implements FilmStorage {
         film.setId(keyHolder.getKey().intValue());
     }
 
-    private void _updateFilm(Film film) throws FailedToUpdateFilmException {
+    private void updateSetFilm(Film film) throws FailedToUpdateFilmException {
         String sql = String.format(
                 "UPDATE film f " +
                         "SET f.name = :%s, " +
@@ -141,148 +118,48 @@ public class FilmDbStorage implements FilmStorage {
                 .addValue(FilmCol.RANK, film.getRank())
                 .addValue(FilmCol.FILM_ID, film.getId());
 
-        int rowsAffected = namedJdbcTemplate.update(sql, sqlParams);
+        int rowsAffected = jdbcTemplate.update(sql, sqlParams);
         if (rowsAffected == 0) {
             throw new FailedToUpdateFilmException(film);
         }
     }
 
-    private void updateGenres(Film film) {
-        deleteGenres(film.getId());
-        insertGenres(film.getId(), film.getGenres());
-    }
-
-    private void deleteGenres(int filmId) {
-        String sql = String.format(
-                "DELETE FROM film_genre " +
-                        "WHERE film_id = :%s",
-                FilmGenreCol.FILM_ID);
-
-        var sqlParams = new MapSqlParameterSource(
-                FilmGenreCol.FILM_ID, filmId);
-
-        namedJdbcTemplate.update(sql, sqlParams);
-    }
-
-    private void insertGenres(int filmId, Set<Genre> genres) {
-        String sql = String.format(
-                "INSERT INTO film_genre (film_id, genre_id) " +
-                        "VALUES (:%s, :%s)",
-                FilmGenreCol.FILM_ID,
-                FilmGenreCol.GENRE_ID);
-
-        var sqlParams = genres.stream()
-                .map(Genre::getId)
-                .map(genreId -> new MapSqlParameterSource()
-                        .addValue(FilmGenreCol.FILM_ID, filmId)
-                        .addValue(FilmGenreCol.GENRE_ID, genreId))
-                .toArray(SqlParameterSource[]::new);
-
-        namedJdbcTemplate.batchUpdate(sql, sqlParams);
-    }
-
-    private Set<Genre> selectGenres(int filmId) {
-        String sql = String.format(
-                "SELECT fg.genre_id, " +
-                        "g.genre " +
-                        "FROM film_genre fg " +
-                        "LEFT JOIN genre g ON g.genre_id = fg.genre_id " +
-                        "WHERE fg.film_id = :%s " +
-                        "ORDER BY fg.genre_id",
-                FilmGenreCol.FILM_ID);
-
-        var sqlParams = new MapSqlParameterSource(
-                FilmGenreCol.FILM_ID, filmId);
-
-        var genreIds = namedJdbcTemplate.query(sql, sqlParams, this::mapGenre);
-        return new HashSet<>(genreIds);
-    }
-
-
-    private void updateLikes(Film film) {
-        deleteLikes(film.getId());
-        insertLikes(film.getId(), film.getUserIdsLikes());
-    }
-
-    private void deleteLikes(int filmId) {
-        String sql = String.format(
-                "DELETE FROM _like " +
-                        "WHERE film_id = :%s",
-                LikeCol.FILM_ID);
-
-        var sqlParams = new MapSqlParameterSource(
-                LikeCol.FILM_ID, filmId);
-
-        namedJdbcTemplate.update(sql, sqlParams);
-    }
-
-    private void insertLikes(int filmId, Set<Integer> userIdsLikes) {
-        String sql = String.format(
-                "INSERT INTO _like (user_id, film_id) " +
-                        "VALUES (:%s, :%s)",
-                LikeCol.USER_ID,
-                LikeCol.FILM_ID);
-
-        var sqlParams = userIdsLikes.stream()
-                .map(userId -> new MapSqlParameterSource()
-                        .addValue(LikeCol.USER_ID, userId)
-                        .addValue(LikeCol.FILM_ID, filmId))
-                .toArray(SqlParameterSource[]::new);
-
-        namedJdbcTemplate.batchUpdate(sql, sqlParams);
-    }
-
-    private Set<Integer> selectLikes(int filmId) {
-        String sql = String.format(
-                "SELECT l.user_id " +
-                        "FROM _like l " +
-                        "WHERE l.film_id = :%s",
-                LikeCol.FILM_ID);
-
-        var sqlParams = new MapSqlParameterSource(
-                LikeCol.FILM_ID, filmId);
-
-        var userIdsLikes = namedJdbcTemplate.queryForList(sql, sqlParams, Integer.class);
-        return new HashSet<>(userIdsLikes);
-    }
-
-    private List<Film> selectFilms() {
-        String sql = "SELECT f.film_id, " +
-                "f.name, " +
-                "f.description, " +
-                "f.release_date, " +
-                "f.duration, " +
-                "f.mpa_rating_id, " +
-                "mr.mpa_rating, " +
-                "f.rank " +
-                "FROM film f " +
-                "LEFT JOIN mpa_rating mr ON mr.mpa_rating_id = f.mpa_rating_id";
-
-        return namedJdbcTemplate.query(sql, this::mapFilm);
-    }
-
     private Film selectFilm(int filmId) {
         String sql = String.format(
-                "SELECT f.film_id, " +
-                        "f.name, " +
-                        "f.description, " +
-                        "f.release_date, " +
-                        "f.duration, " +
-                        "mr.mpa_rating_id, " +
-                        "mr.mpa_rating, " +
-                        "f.rank " +
-                        "FROM FILM f " +
-                        "LEFT JOIN mpa_rating mr ON mr.mpa_rating_id = f.mpa_rating_id " +
+                "SELECT * " +
+                        "FROM film f " +
                         "WHERE f.film_id = :%s",
                 FilmCol.FILM_ID);
 
         var sqlParams = new MapSqlParameterSource()
                 .addValue(FilmCol.FILM_ID, filmId);
 
-        var films = namedJdbcTemplate.query(sql, sqlParams, this::mapFilm);
+        var films = jdbcTemplate.query(sql, sqlParams, this::mapFilm);
         return films.size() == 1
                 ? films.get(0)
                 : null;
+    }
+
+    private List<Film> selectFilms() {
+        String sql =
+                "SELECT * " +
+                        "FROM film f ";
+
+        return jdbcTemplate.query(sql, this::mapFilm);
+    }
+
+    private List<Film> selectPopularFilms(int numberOfFilms) {
+        String sql = String.format(
+                "SELECT * " +
+                        "FROM film f " +
+                        "ORDER BY f.rank, f.film_id DESC " +
+                        "LIMIT :%s",
+                LIMIT);
+
+        var sqlParams = new MapSqlParameterSource()
+                .addValue(LIMIT, numberOfFilms);
+
+        return jdbcTemplate.query(sql, sqlParams, this::mapFilm);
     }
 
     private Film mapFilm(ResultSet rs, int rowNum) throws SQLException {
@@ -292,20 +169,13 @@ public class FilmDbStorage implements FilmStorage {
         film.setDescription(rs.getString(FilmCol.DESCRIPTION));
         film.setReleaseDate(rs.getDate(FilmCol.RELEASE_DATE).toLocalDate());
         film.setDuration(rs.getInt(FilmCol.DURATION));
+
+        MpaRating mr = new MpaRating();
+        mr.setId(rs.getInt(FilmCol.MPA_RATING_ID));
+        film.setMpaRating(mr);
+
         film.setRank(rs.getInt(FilmCol.RANK));
-
-        MpaRating r = new MpaRating();
-        r.setId(rs.getInt(MpaRatingCol.MPA_RATING_ID));
-        r.setRating(rs.getString(MpaRatingCol.MPA_RATING));
-        film.setMpaRating(r);
         return film;
-    }
-
-    private Genre mapGenre(ResultSet rs, int rowNum) throws SQLException {
-        Genre genre = new Genre();
-        genre.setId(rs.getInt(GenreCol.GENRE_ID));
-        genre.setGenre(rs.getString(GenreCol.GENRE));
-        return genre;
     }
 
 }

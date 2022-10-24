@@ -14,7 +14,6 @@ import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MpaRating;
 
 import java.time.LocalDate;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -46,7 +45,6 @@ class FilmDbStorageTest {
         Genre genre = new Genre();
         genre.setId(1);
         fourRooms.setGenres(Set.of(genre));
-        fourRooms.setUserIdsLikes(new HashSet<>());
         fourRooms.setRank(10);
 
         starWars = new Film();
@@ -60,7 +58,6 @@ class FilmDbStorageTest {
         genre = new Genre();
         genre.setId(6);
         starWars.setGenres(Set.of(genre));
-        starWars.setUserIdsLikes(new HashSet<>());
         starWars.setRank(1);
     }
 
@@ -94,21 +91,21 @@ class FilmDbStorageTest {
     @Test
     void givenFilms_whenGetFilms_expectActualFilms() {
         var created1 = filmDbStorage.createFilm(fourRooms);
-        var gotten1 = filmDbStorage.getFilm(created1.getId()).orElseThrow();
+        var gotten1 = filmDbStorage.readFilm(created1.getId()).orElseThrow();
 
         var created2 = filmDbStorage.createFilm(starWars);
-        var gotten2 = filmDbStorage.getFilm(created2.getId()).orElseThrow();
+        var gotten2 = filmDbStorage.readFilm(created2.getId()).orElseThrow();
 
         var created = List.of(gotten1, gotten2);
 
-        var gotten = filmDbStorage.getFilms();
+        var gotten = filmDbStorage.readFilms();
         assertEquals(created, gotten);
     }
 
     @Test
     void givenFilmWithLikes_whenGetFilm_expectActualFilm() {
         var created = filmDbStorage.createFilm(fourRooms);
-        var gotten = filmDbStorage.getFilm(created.getId()).orElseThrow();
+        var gotten = filmDbStorage.readFilm(created.getId()).orElseThrow();
         assertEquals(1, gotten.getId());
     }
 

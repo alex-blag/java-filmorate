@@ -17,12 +17,12 @@ public class MpaRatingService {
     private final MpaRatingDbStorage mpaRatingDbStorage;
 
     public List<MpaRating> getMpaRatings() {
-        return mpaRatingDbStorage.getMpaRatings();
+        return mpaRatingDbStorage.readMpaRatings();
     }
 
     public MpaRating getMpaRating(int mpaRatingId) {
         return mpaRatingDbStorage
-                .getMpaRating(mpaRatingId)
+                .readMpaRating(mpaRatingId)
                 .orElseThrow(() -> new NoSuchMpaRatingIdException(mpaRatingId));
     }
 
