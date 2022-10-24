@@ -12,6 +12,7 @@ import ru.yandex.practicum.filmorate.exception.FailedToUpdateFilmException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.storage.FilmCol;
+import ru.yandex.practicum.filmorate.storage.MpaRatingCol;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -126,8 +127,16 @@ public class FilmDbStorage implements FilmStorage {
 
     private Film selectFilm(int filmId) {
         String sql = String.format(
-                "SELECT * " +
+                "SELECT f.film_id, " +
+                        "f.name, " +
+                        "f.description, " +
+                        "f.release_date, " +
+                        "f.duration, " +
+                        "f.mpa_rating_id, " +
+                        "mr.mpa_rating, " +
+                        "f.rank " +
                         "FROM film f " +
+                        "LEFT JOIN mpa_rating mr ON mr.mpa_rating_id = f.mpa_rating_id " +
                         "WHERE f.film_id = :%s",
                 FilmCol.FILM_ID);
 
@@ -142,16 +151,32 @@ public class FilmDbStorage implements FilmStorage {
 
     private List<Film> selectFilms() {
         String sql =
-                "SELECT * " +
-                        "FROM film f ";
+                "SELECT f.film_id, " +
+                        "f.name, " +
+                        "f.description, " +
+                        "f.release_date, " +
+                        "f.duration, " +
+                        "f.mpa_rating_id, " +
+                        "mr.mpa_rating, " +
+                        "f.rank " +
+                        "FROM film f " +
+                        "LEFT JOIN mpa_rating mr ON mr.mpa_rating_id = f.mpa_rating_id ";
 
         return jdbcTemplate.query(sql, this::mapFilm);
     }
 
     private List<Film> selectPopularFilms(int numberOfFilms) {
         String sql = String.format(
-                "SELECT * " +
+                "SELECT f.film_id, " +
+                        "f.name, " +
+                        "f.description, " +
+                        "f.release_date, " +
+                        "f.duration, " +
+                        "f.mpa_rating_id, " +
+                        "mr.mpa_rating, " +
+                        "f.rank " +
                         "FROM film f " +
+                        "LEFT JOIN mpa_rating mr ON mr.mpa_rating_id = f.mpa_rating_id " +
                         "ORDER BY f.rank, f.film_id DESC " +
                         "LIMIT :%s",
                 LIMIT);
@@ -163,15 +188,16 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     private Film mapFilm(ResultSet rs, int rowNum) throws SQLException {
-        Film film = new Film();
+        var film = new Film();
         film.setId(rs.getInt(FilmCol.FILM_ID));
         film.setName(rs.getString(FilmCol.NAME));
         film.setDescription(rs.getString(FilmCol.DESCRIPTION));
         film.setReleaseDate(rs.getDate(FilmCol.RELEASE_DATE).toLocalDate());
         film.setDuration(rs.getInt(FilmCol.DURATION));
 
-        MpaRating mr = new MpaRating();
+        var mr = new MpaRating();
         mr.setId(rs.getInt(FilmCol.MPA_RATING_ID));
+        mr.setName(rs.getString(MpaRatingCol.MPA_RATING));
         film.setMpaRating(mr);
 
         film.setRank(rs.getInt(FilmCol.RANK));

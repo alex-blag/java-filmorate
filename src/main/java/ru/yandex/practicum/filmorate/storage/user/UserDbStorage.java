@@ -11,9 +11,8 @@ import ru.yandex.practicum.filmorate.exception.FailedToInsertUserException;
 import ru.yandex.practicum.filmorate.exception.FailedToUpdateUserException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserCol;
+import ru.yandex.practicum.filmorate.storage.UserUtils;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -108,7 +107,7 @@ public class UserDbStorage implements UserStorage {
         String sql = "SELECT * " +
                 "FROM _user";
 
-        return namedJdbcTemplate.query(sql, this::mapUser);
+        return namedJdbcTemplate.query(sql, UserUtils::mapUser);
     }
 
     private User selectUser(int userId) {
@@ -121,20 +120,10 @@ public class UserDbStorage implements UserStorage {
         var sqlParams = new MapSqlParameterSource()
                 .addValue(UserCol.USER_ID, userId);
 
-        var users = namedJdbcTemplate.query(sql, sqlParams, this::mapUser);
+        var users = namedJdbcTemplate.query(sql, sqlParams, UserUtils::mapUser);
         return users.size() == 1
                 ? users.get(0)
                 : null;
-    }
-
-    private User mapUser(ResultSet rs, int rowNum) throws SQLException {
-        User u = new User();
-        u.setId(rs.getInt(UserCol.USER_ID));
-        u.setLogin(rs.getString(UserCol.LOGIN));
-        u.setName(rs.getString(UserCol.NAME));
-        u.setEmail(rs.getString(UserCol.EMAIL));
-        u.setBirthday(rs.getDate(UserCol.BIRTHDAY).toLocalDate());
-        return u;
     }
 
 }

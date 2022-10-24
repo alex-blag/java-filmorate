@@ -8,7 +8,9 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.FailedToDeleteFriendshipException;
 import ru.yandex.practicum.filmorate.exception.FailedToInsertFriendshipException;
+import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.FriendshipCol;
+import ru.yandex.practicum.filmorate.storage.UserUtils;
 
 import java.util.List;
 
@@ -35,16 +37,17 @@ public class FriendshipDbStorage implements FriendshipStorage {
     }
 
     @Override
-    public List<Integer> readFriendsIds(int userId) {
-        log.info("Read friends ids: {}", userId);
-        return selectFriendsIds(userId);
+    public List<User> readFriends(int userId) {
+        log.info("Read friends: {}", userId);
+        return selectFriends(userId);
     }
 
     @Override
-    public List<Integer> readCommonFriendsIds(int userId, int otherId) {
-        log.info("Read common friends ids: {}, {}", userId, otherId);
-        return selectCommonFriendsIds(userId, otherId);
+    public List<User> readCommonFriends(int userId, int otherId) {
+        log.info("Read common friends: {}, {}", userId, otherId);
+        return selectCommonFriends(userId, otherId);
     }
+
 
     private void insertFriendship(int userId, int friendId) throws FailedToInsertFriendshipException {
         String sql = String.format(
@@ -83,28 +86,42 @@ public class FriendshipDbStorage implements FriendshipStorage {
         }
     }
 
-    private List<Integer> selectFriendsIds(int userId) {
+    private List<User> selectFriends(int userId) {
         String sql = String.format(
-                "SELECT f.friend_id " +
+                "SELECT u.user_id, " +
+                        "u.login, " +
+                        "u.name, " +
+                        "u.email, " +
+                        "u.birthday " +
                         "FROM friendship f " +
+                        "LEFT JOIN _user u ON u.user_id = f.friend_id " +
                         "WHERE f.user_id = :%s",
                 FriendshipCol.USER_ID);
 
         var sqlParams = new MapSqlParameterSource()
                 .addValue(FriendshipCol.USER_ID, userId);
 
-        return jdbcTemplate.queryForList(sql, sqlParams, Integer.class);
+        return jdbcTemplate.query(sql, sqlParams, UserUtils::mapUser);
     }
 
-    private List<Integer> selectCommonFriendsIds(int userId, int otherId) {
+    private List<User> selectCommonFriends(int userId, int otherId) {
         String sql = String.format(
-                "SELECT f1.friend_id " +
+                "WITH common_friends_ids AS (" +
+                        "SELECT f1.friend_id " +
                         "FROM friendship f1 " +
                         "WHERE f1.user_id = :%s " +
                         "INTERSECT " +
                         "SELECT f2.friend_id " +
                         "FROM friendship f2 " +
-                        "WHERE f2.user_id = :%s",
+                        "WHERE f2.user_id = :%s " +
+                        ") " +
+                        "SELECT u.user_id, " +
+                        "u.login, " +
+                        "u.name, " +
+                        "u.email, " +
+                        "u.birthday " +
+                        "FROM common_friends_ids cfi " +
+                        "LEFT JOIN _user u ON u.user_id = cfi.friend_id",
                 FriendshipCol.USER_ID,
                 OTHER_ID);
 
@@ -112,7 +129,7 @@ public class FriendshipDbStorage implements FriendshipStorage {
                 .addValue(FriendshipCol.USER_ID, userId)
                 .addValue(OTHER_ID, otherId);
 
-        return jdbcTemplate.queryForList(sql, sqlParams, Integer.class);
+        return jdbcTemplate.query(sql, sqlParams, UserUtils::mapUser);
     }
 
 }

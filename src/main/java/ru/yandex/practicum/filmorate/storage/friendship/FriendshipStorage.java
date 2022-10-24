@@ -1,5 +1,7 @@
 package ru.yandex.practicum.filmorate.storage.friendship;
 
+import ru.yandex.practicum.filmorate.model.User;
+
 import java.util.List;
 
 public interface FriendshipStorage {
@@ -8,8 +10,8 @@ public interface FriendshipStorage {
 
     void destroyFriendship(int userId, int friendId);
 
-    List<Integer> readFriendsIds(int userId);
+    List<User> readFriends(int userId);
 
-    List<Integer> readCommonFriendsIds(int userId, int otherId);
+    List<User> readCommonFriends(int userId, int otherId);
 
 }
